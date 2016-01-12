@@ -7,12 +7,12 @@ namespace BFSharpTests
 {
     internal class BrainfuckRunnerTest
     {
+        private Func<int> _readFunc;
         private BrainfuckRunner _runner;
         private Action<char> _writeAction;
-        private Func<int> _readFunc;
 
         [SetUp]
-        public void Setup()
+        public void SetUp()
         {
             _runner = new BrainfuckRunner(new ArrayMemory());
             _writeAction = A.Fake<Action<char>>();
@@ -22,7 +22,7 @@ namespace BFSharpTests
         [Test]
         public void RunShouldThrowExceptionForInvalidOperation()
         {
-            Assert.Throws<ArgumentException>( () => _runner.Run("%", _readFunc, _writeAction) );
+            Assert.Throws<ArgumentException>(() => _runner.Run("%", _readFunc, _writeAction));
         }
 
         [Test]
@@ -31,7 +31,7 @@ namespace BFSharpTests
             _runner.Run(".", _readFunc, _writeAction);
             A.CallTo(() => _writeAction('\0')).MustHaveHappened();
         }
-        
+
         [Test]
         public void RunShouldIncrementCorrectly()
         {
@@ -39,7 +39,7 @@ namespace BFSharpTests
             _runner.Run(program, _readFunc, _writeAction);
             A.CallTo(() => _writeAction('A')).MustHaveHappened();
         }
-        
+
         [Test]
         public void RunShouldDecrementCorrectly()
         {
@@ -62,6 +62,29 @@ namespace BFSharpTests
             var program = new string('>', 3);
             _runner.Run(program, _readFunc, _writeAction);
             Assert.AreEqual(3, _runner.CurrentPosition);
+        }
+
+        [Test]
+        public void RunShouldHandleSimpleLoopCorrectly()
+        {
+            const string program = "+++[-].";
+            _runner.Run(program, _readFunc, _writeAction);
+            A.CallTo(() => _writeAction('\0')).MustHaveHappened();
+        }
+
+        [Test]
+        [TestCase("[>[+]].")]
+        [TestCase("+[>[+]].")]
+        public void RunShouldHandleInnerLoopsCorrectly(string program)
+        {
+            _runner.Run(program, _readFunc, _writeAction);
+            A.CallTo(() => _writeAction('\0')).MustHaveHappened();
+        }
+
+        [Test]
+        public void RunShouldThrowExceptionForUnmatchedCloseinBracket()
+        {
+            Assert.Throws<ArgumentException>(() => _runner.Run("+++]", _readFunc, _writeAction));
         }
     }
 }

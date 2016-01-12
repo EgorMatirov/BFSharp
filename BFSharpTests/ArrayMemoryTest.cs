@@ -6,12 +6,28 @@ namespace BFSharpTests
     [TestFixture]
     internal class ArrayMemoryTest
     {
-        private ArrayMemory _memory;
-
         [SetUp]
         public void SetUp()
         {
             _memory = new ArrayMemory();
+        }
+
+        private ArrayMemory _memory;
+
+        [Test]
+        public void ClearShouldClear()
+        {
+            _memory.MoveLeft();
+            _memory.Increment();
+            _memory.Clear();
+            Assert.AreEqual(0, _memory.CurrentValue);
+        }
+
+        [Test]
+        public void DecrementShouldWorkCorrectly()
+        {
+            _memory.Decrement();
+            Assert.AreEqual(255, _memory.CurrentValue);
         }
 
         [Test]
@@ -22,10 +38,11 @@ namespace BFSharpTests
         }
 
         [Test]
-        public void DecrementShouldWorkCorrectly()
+        public void MoveLeftShouldMoveOneStepToLeftIfCurrentPositionIsNotStart()
         {
-            _memory.Decrement();
-            Assert.AreEqual(255, _memory.CurrentValue);
+            _memory.MoveRight();
+            _memory.MoveLeft();
+            Assert.AreEqual(0, _memory.CursorPosition);
         }
 
         [Test]
@@ -48,14 +65,6 @@ namespace BFSharpTests
         {
             _memory.MoveLeft();
             _memory.MoveRight();
-            Assert.AreEqual(0, _memory.CursorPosition);
-        }
-
-        [Test]
-        public void MoveLeftShouldMoveOneStepToLeftIfCurrentPositionIsNotStart()
-        {
-            _memory.MoveRight();
-            _memory.MoveLeft();
             Assert.AreEqual(0, _memory.CursorPosition);
         }
     }

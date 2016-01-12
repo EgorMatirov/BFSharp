@@ -2,11 +2,10 @@
 {
     public class ArrayMemory : IMemory
     {
+        private readonly byte[] _memory = new byte[30000];
         public ushort CursorPosition { get; private set; }
 
         public byte CurrentValue => _memory[CursorPosition];
-
-        private readonly byte[] _memory = new byte[30000];
 
         public void MoveLeft()
         {
@@ -24,7 +23,13 @@
                 CursorPosition += 1;
         }
 
-        public void Increment() => _memory[CursorPosition]++;
-        public void Decrement() => _memory[CursorPosition]--;
+        public void Clear()
+        {
+            for (var i = 0; i < _memory.Length; ++i)
+                _memory[i] = 0;
+        }
+
+        public void Increment() => ++_memory[CursorPosition];
+        public void Decrement() => --_memory[CursorPosition];
     }
 }

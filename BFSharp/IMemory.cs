@@ -9,5 +9,6 @@
         void Increment();
         void MoveLeft();
         void MoveRight();
+        void Clear();
     }
 }
