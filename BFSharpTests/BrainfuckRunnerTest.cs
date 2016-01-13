@@ -7,14 +7,14 @@ namespace BFSharpTests
 {
     internal class BrainfuckRunnerTest
     {
+        private IMemory _memoryMock;
         private Func<int> _readFunc;
-        private BrainfuckRunner _runner;
         private Action<char> _writeAction;
 
         [SetUp]
         public void SetUp()
         {
-            _runner = new BrainfuckRunner(new ArrayMemory());
+            _memoryMock = A.Fake<IMemory>();
             _writeAction = A.Fake<Action<char>>();
             _readFunc = A.Fake<Func<int>>();
         }
@@ -22,69 +22,119 @@ namespace BFSharpTests
         [Test]
         public void RunShouldThrowExceptionForInvalidOperation()
         {
-            Assert.Throws<ArgumentException>(() => _runner.Run("%", _readFunc, _writeAction));
+            var runner = new BrainfuckRunner(_memoryMock, "%", _readFunc, _writeAction);
+            Assert.Throws<ArgumentException>(() => runner.Run());
         }
 
         [Test]
         public void RunShouldPrintCharCorrectly()
         {
-            _runner.Run(".", _readFunc, _writeAction);
-            A.CallTo(() => _writeAction('\0')).MustHaveHappened();
+            var runner = new BrainfuckRunner(_memoryMock, ".", _readFunc, _writeAction);
+            runner.Run();
+            A.CallTo(() => _writeAction('\0')).MustHaveHappened(Repeated.Exactly.Once);
+        }
+
+        [Test]
+        public void RunShouldReadCharCorrectly()
+        {
+            const string program = ",";
+            var runner = new BrainfuckRunner(_memoryMock, program, _readFunc, _writeAction);
+            A.CallTo(() => _readFunc()).Returns('A');
+
+            runner.Run();
+
+            A.CallTo(() => _readFunc()).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(_memoryMock)
+                .Where(call => call.Method.Name == "set_CurrentValue" && call.Arguments.Get<byte>(0) == 'A')
+                .MustHaveHappened(Repeated.Exactly.Once);
         }
 
         [Test]
         public void RunShouldIncrementCorrectly()
         {
             var program = new string('+', 65) + ".";
-            _runner.Run(program, _readFunc, _writeAction);
-            A.CallTo(() => _writeAction('A')).MustHaveHappened();
+            var runner = new BrainfuckRunner(_memoryMock, program, _readFunc, _writeAction);
+
+            runner.Run();
+
+            A.CallTo(() => _memoryMock.Increment()).MustHaveHappened(Repeated.Exactly.Times(65));
         }
 
         [Test]
         public void RunShouldDecrementCorrectly()
         {
-            var program = new string('-', 191) + ".";
-            _runner.Run(program, _readFunc, _writeAction);
-            A.CallTo(() => _writeAction('A')).MustHaveHappened();
+            var program = new string('-', 191);
+            var runner = new BrainfuckRunner(_memoryMock, program, _readFunc, _writeAction);
+
+            runner.Run();
+
+            A.CallTo(() => _memoryMock.Decrement()).MustHaveHappened(Repeated.Exactly.Times(191));
         }
 
         [Test]
         public void RunShouldMoveLeftCorrectly()
         {
             var program = new string('<', 2);
-            _runner.Run(program, _readFunc, _writeAction);
-            Assert.AreEqual(29998, _runner.CurrentPosition);
+            var runner = new BrainfuckRunner(_memoryMock, program, _readFunc, _writeAction);
+
+            runner.Run();
+
+            A.CallTo(() => _memoryMock.MoveLeft()).MustHaveHappened(Repeated.Exactly.Twice);
         }
 
         [Test]
         public void RunShouldMoveRightCorrectly()
         {
-            var program = new string('>', 3);
-            _runner.Run(program, _readFunc, _writeAction);
-            Assert.AreEqual(3, _runner.CurrentPosition);
+            var program = new string('>', 2);
+            var runner = new BrainfuckRunner(_memoryMock, program, _readFunc, _writeAction);
+
+            runner.Run();
+
+            A.CallTo(() => _memoryMock.MoveRight()).MustHaveHappened(Repeated.Exactly.Twice);
         }
 
         [Test]
         public void RunShouldHandleSimpleLoopCorrectly()
         {
             const string program = "+++[-].";
-            _runner.Run(program, _readFunc, _writeAction);
-            A.CallTo(() => _writeAction('\0')).MustHaveHappened();
+            var runner = new BrainfuckRunner(_memoryMock, program, _readFunc, _writeAction);
+
+            runner.Run();
+
+            A.CallTo(() => _writeAction('\0')).MustHaveHappened(Repeated.Exactly.Once);
         }
 
         [Test]
-        [TestCase("[>[+]].")]
-        [TestCase("+[>[+]].")]
+        [TestCase("[>[+]]")]
+        [TestCase("+[>+[+]]")]
         public void RunShouldHandleInnerLoopsCorrectly(string program)
         {
-            _runner.Run(program, _readFunc, _writeAction);
-            A.CallTo(() => _writeAction('\0')).MustHaveHappened();
+            var currentPosition = 0;
+            var array = new byte[30000];
+            A.CallTo(() => _memoryMock.Increment()).Invokes(() => ++array[currentPosition]);
+            A.CallTo(() => _memoryMock.CurrentValue).ReturnsLazily(() => array[currentPosition]);
+            A.CallTo(() => _memoryMock.MoveRight()).Invokes(() => currentPosition = (currentPosition + 1)%3000);
+            var runner = new BrainfuckRunner(_memoryMock, program, _readFunc, _writeAction);
+
+            runner.Run();
+
+            Assert.AreEqual(0, _memoryMock.CurrentValue);
         }
 
         [Test]
-        public void RunShouldThrowExceptionForUnmatchedCloseinBracket()
+        [ExpectedException(typeof (ArgumentException))]
+        public void RunShouldThrowExceptionForUnmatchedClosingBracket()
         {
-            Assert.Throws<ArgumentException>(() => _runner.Run("+++]", _readFunc, _writeAction));
+            // ReSharper disable once UnusedVariable
+            var runner = new BrainfuckRunner(_memoryMock, "+++]", _readFunc, _writeAction);
+        }
+
+        [Test]
+        [ExpectedException(typeof(ArgumentException))]
+        public void RunShouldThrowExceptionForUnmatchedOpeningBracket()
+        {
+            // ReSharper disable once UnusedVariable
+            var runner = new BrainfuckRunner(_memoryMock, "[+++", _readFunc, _writeAction);
         }
     }
 }

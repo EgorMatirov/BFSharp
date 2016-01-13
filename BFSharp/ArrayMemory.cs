@@ -2,34 +2,37 @@
 {
     public class ArrayMemory : IMemory
     {
-        private readonly byte[] _memory = new byte[30000];
-        public ushort CursorPosition { get; private set; }
+        private const ushort Size = 30000;
+        private readonly byte[] _memory = new byte[Size];
+        public uint CursorPosition { get; private set; }
 
-        public byte CurrentValue => _memory[CursorPosition];
+        public byte CurrentValue
+        {
+            get { return _memory[CursorPosition]; }
+            set { _memory[CursorPosition] = value; }
+        }
 
         public void MoveLeft()
         {
             if (CursorPosition == 0)
-                CursorPosition = 29999;
+                CursorPosition = Size - 1;
             else
-                CursorPosition -= 1;
+                --CursorPosition;
         }
 
         public void MoveRight()
         {
-            if (CursorPosition == 29999)
-                CursorPosition = 0;
-            else
-                CursorPosition += 1;
+            CursorPosition = ++CursorPosition%Size;
         }
 
-        public void Clear()
+        public void Reset()
         {
             for (var i = 0; i < _memory.Length; ++i)
                 _memory[i] = 0;
+            CursorPosition = 0;
         }
 
-        public void Increment() => ++_memory[CursorPosition];
-        public void Decrement() => --_memory[CursorPosition];
+        public void Increment() => ++CurrentValue;
+        public void Decrement() => --CurrentValue;
     }
 }

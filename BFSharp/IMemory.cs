@@ -2,13 +2,13 @@
 {
     public interface IMemory
     {
-        byte CurrentValue { get; }
-        ushort CursorPosition { get; }
+        byte CurrentValue { get; set; }
+        uint CursorPosition { get; }
 
         void Decrement();
         void Increment();
         void MoveLeft();
         void MoveRight();
-        void Clear();
+        void Reset();
     }
 }

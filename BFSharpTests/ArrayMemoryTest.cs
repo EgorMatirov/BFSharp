@@ -15,12 +15,13 @@ namespace BFSharpTests
         private ArrayMemory _memory;
 
         [Test]
-        public void ClearShouldClear()
+        public void ResetShouldClearAndResetPosition()
         {
             _memory.MoveLeft();
-            _memory.Increment();
-            _memory.Clear();
+            _memory.CurrentValue = 5;
+            _memory.Reset();
             Assert.AreEqual(0, _memory.CurrentValue);
+            Assert.AreEqual(0, _memory.CursorPosition);
         }
 
         [Test]
@@ -28,6 +29,13 @@ namespace BFSharpTests
         {
             _memory.Decrement();
             Assert.AreEqual(255, _memory.CurrentValue);
+        }
+
+        [Test]
+        public void GetAndSetShouldWorkCorrectly()
+        {
+            _memory.CurrentValue = 1;
+            Assert.AreEqual(1, _memory.CurrentValue);
         }
 
         [Test]
